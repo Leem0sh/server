@@ -3236,6 +3236,10 @@ PlanBackend::Context::Run(
       }
     }
   }
+
+  if (zero_copy_support_) {
+    cudaStreamWaitEvent(stream_, events_[next_set_].output_ready_, 0);
+  }
 }
 
 Status
