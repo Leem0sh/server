@@ -3052,12 +3052,13 @@ PlanBackend::Context::Run(
   const auto output_stream =
       use_output_copy_stream_ ? output_copy_stream_ : stream_;
 
-  LOG_ERROR << "payload_->responder_.reset: New BackendResponder created";
+  LOG_ERROR << "payload_->responder_.reset";
   // For each requested output verify that the output can accept the
   // actual model output and then copy that output from the GPU
   payload_->responder_.reset(new BackendResponder(
       payload_->requests_, &payload_->responses_, max_batch_size_,
-      enable_pinned_output_, output_stream, events_[next_set_].output_ready_));
+      enable_pinned_output_, output_stream, events_[next_set_].output_ready_,
+      zero_copy_support_));
   payload_->process_tensor_tuples_.reserve(num_expected_bindings_);
   for (int io_index = 0; io_index < num_expected_bindings_; ++io_index) {
     auto& io_binding_info =
@@ -3301,6 +3302,7 @@ PlanBackend::Context::ProcessResponse(
 
     // Call Finalize() here to defer CUDA synchronization as much as possible
     payload->responder_->Finalize();
+    LOG_ERROR << "payload->responder_->Finalize() Done";
     cudaEventSynchronize(event_set.output_ready_);
     NVTX_MARKER("plan_output_ready");
     // Compute ends when the output data copy is completed
